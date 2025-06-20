@@ -8,21 +8,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// One-to-Many
 model User {
   id String @id @default(cuid())
   name String
   email String @unique
   password String
-
-  post Post[]
+  role String @default("USER")
+ 
+  session Session[]
+  event Event[]
 }
 
-model Post {
+model Session {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Event {
   id String @id @default(cuid())
   title String
   content String
-  category String?
+  place String
+  time String
+
   userId String
   user User @relation(fields: [userId], references: [id])
 }

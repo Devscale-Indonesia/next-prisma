@@ -1,7 +1,10 @@
 "use server";
 
+import { getSession } from "@/services/session";
 import { prisma } from "@/utils/prisma";
 import bcrypt from "bcrypt";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export async function registerAction(formData) {
   const name = formData.get("name");
@@ -36,6 +39,7 @@ export async function registerAction(formData) {
 }
 
 export async function loginAction(formData) {
+  const cookieStore = await cookies();
   const email = formData.get("email");
   const password = formData.get("password");
 
@@ -69,6 +73,33 @@ export async function loginAction(formData) {
     };
   }
 
-  console.log("Login success!");
   // Authorization
+  const newSession = await prisma.session.create({
+    data: {
+      userId: user.id,
+    },
+  });
+
+  console.log({ newSession });
+
+  cookieStore.set("sessionId", newSession.id, {
+    httpOnly: true,
+    maxAge: 1000 * 30,
+  });
+
+  redirect("/dashboard");
+}
+
+export async function logoutAction(_) {
+  const cookieStore = await cookies();
+  const session = await getSession();
+
+  await prisma.session.delete({
+    where: {
+      id: session.id,
+    },
+  });
+
+  cookieStore.delete("sessionId");
+  redirect("/");
 }
